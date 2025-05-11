@@ -20,22 +20,30 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
     user_input = update.message.text
-    lang = detect(user_input)
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are a creative assistant who rewrites user input into imaginative, engaging prompts for ChatGPT. Reply in the same language as the input."},
-            {"role": "user", "content": user_input}
-        ]
-    )
-    creative_prompt = response['choices'][0]['message']['content']
+    try:
+        lang = detect(user_input)
+    except:
+        lang = "en"
 
-    if user_id not in user_prompts:
-        user_prompts[user_id] = []
-    user_prompts[user_id].append({"original": user_input, "prompt": creative_prompt})
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a creative assistant who rewrites user input into imaginative, engaging prompts for ChatGPT. Reply in the same language as the input."},
+                {"role": "user", "content": user_input}
+            ]
+        )
+        creative_prompt = response['choices'][0]['message']['content']
+        await update.message.reply_text(creative_prompt)
 
-    await update.message.reply_text(creative_prompt)
+        if user_id not in user_prompts:
+            user_prompts[user_id] = []
+        user_prompts[user_id].append({"original": user_input, "prompt": creative_prompt})
+
+    except Exception as e:
+        await update.message.reply_text("⚠️ Sorry, something went wrong with generating your prompt.")
+        print(f"[OpenAI Error] {e}")
 
 async def export_prompts(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
