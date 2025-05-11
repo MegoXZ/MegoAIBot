@@ -10,7 +10,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-openai.api_key = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 user_prompts = {}
 
@@ -27,14 +29,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lang = "en"
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a creative assistant who rewrites user input into imaginative, engaging prompts for ChatGPT. Reply in the same language as the input."},
                 {"role": "user", "content": user_input}
             ]
         )
-        creative_prompt = response['choices'][0]['message']['content']
+        creative_prompt = response.choices[0].message.content
         await update.message.reply_text(creative_prompt)
 
         if user_id not in user_prompts:
